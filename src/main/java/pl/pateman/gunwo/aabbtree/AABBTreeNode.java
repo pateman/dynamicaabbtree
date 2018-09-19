@@ -4,8 +4,8 @@ import org.joml.AABBf;
 
 import java.util.Arrays;
 
-class AABBTreeNode<E extends Boundable> {
-    static final int MAX_NUM_OF_CHILDREN_PER_NODE = 2;
+final class AABBTreeNode<E extends Boundable> {
+    private static final int MAX_NUM_OF_CHILDREN_PER_NODE = 2;
     static final int INVALID_NODE_INDEX = -1;
     static final int LEFT_CHILD = 0;
     static final int RIGHT_CHILD = 1;
@@ -20,20 +20,20 @@ class AABBTreeNode<E extends Boundable> {
 
     AABBTreeNode() {
         children = new int[MAX_NUM_OF_CHILDREN_PER_NODE];
-        Arrays.fill(children, INVALID_NODE_INDEX);
+        assignChildren(INVALID_NODE_INDEX, INVALID_NODE_INDEX);
 
         aabb = new AABBf();
         parent = INVALID_NODE_INDEX;
     }
 
     boolean isLeaf() {
-        return children[LEFT_CHILD] == INVALID_NODE_INDEX;
+        return getLeftChild() == INVALID_NODE_INDEX;
     }
 
     void replaceChild(int childIndexToReplace, int replacement) {
-        if (children[LEFT_CHILD] == childIndexToReplace) {
+        if (getLeftChild() == childIndexToReplace) {
             assignChild(LEFT_CHILD, replacement);
-        } else if (children[RIGHT_CHILD] == childIndexToReplace) {
+        } else if (getRightChild() == childIndexToReplace) {
             assignChild(RIGHT_CHILD, replacement);
         }
     }
@@ -51,9 +51,9 @@ class AABBTreeNode<E extends Boundable> {
         if (data == null) {
             return;
         }
-        AABBf dataAABB = data.getAABB();
-        this.aabb.setMin(dataAABB.minX - margin, dataAABB.minY - margin, dataAABB.minZ - margin);
-        this.aabb.setMax(dataAABB.maxX + margin, dataAABB.maxY + margin, dataAABB.maxZ + margin);
+        AABBf dataAABB = data.getAABB(aabb);
+        aabb.setMin(dataAABB.minX - margin, dataAABB.minY - margin, dataAABB.minZ - margin);
+        aabb.setMax(dataAABB.maxX + margin, dataAABB.maxY + margin, dataAABB.maxZ + margin);
     }
 
     int getLeftChild() {

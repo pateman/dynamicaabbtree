@@ -4,7 +4,9 @@ import org.joml.AABBf;
 import pl.pateman.gunwo.aabbtree.AABBTreeHeuristicFunction.HeuristicResult;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static java.lang.Math.max;
 import static pl.pateman.gunwo.aabbtree.AABBTreeNode.INVALID_NODE_INDEX;
@@ -14,12 +16,13 @@ import static pl.pateman.gunwo.aabbtree.AABBTreeNode.RIGHT_CHILD;
 /**
  * Created by pateman.
  */
-public final class AABBTree<T extends Boundable> {
+public final class AABBTree<T extends Boundable & Identifiable> {
 
     public static final float DEFAULT_FAT_AABB_MARGIN = 0.2f;
 
     private final List<AABBTreeNode<T>> nodes;
     private final AABBTreeHeuristicFunction<T> insertionHeuristicFunction;
+    private final Set<AABBTreeObject<T>> objects;
 
     private int root;
     private float fatAABBMargin;
@@ -35,6 +38,7 @@ public final class AABBTree<T extends Boundable> {
         if (this.insertionHeuristicFunction == null) {
             throw new IllegalArgumentException("A valid insertion heuristic function is required");
         }
+        objects = new HashSet<>();
         this.fatAABBMargin = fatAABBMargin;
     }
 
@@ -222,18 +226,46 @@ public final class AABBTree<T extends Boundable> {
     }
 
     public void add(T object) {
-        AABBTreeNode<T> leafNode = createLeafNode(object);
-
-        if (root == INVALID_NODE_INDEX) {
-            root = addNodeAndGetIndex(leafNode);
+        if (contains(object))
+        {
+            update(object);
             return;
         }
 
-        insertNode(addNodeAndGetIndex(leafNode));
+        AABBTreeNode<T> leafNode = createLeafNode(object);
+
+        int newNodeIndex = addNodeAndGetIndex(leafNode);
+        if (root == INVALID_NODE_INDEX) {
+            root = newNodeIndex;
+        } else
+        {
+            insertNode(newNodeIndex);
+        }
+
+        objects.add(AABBTreeObject.create(object, newNodeIndex));
     }
 
     public void clear() {
         nodes.clear();
+        objects.clear();
         root = INVALID_NODE_INDEX;
+    }
+
+    public void update(T object) {
+        if (!contains(object))
+        {
+            add(object);
+            return;
+        }
+
+        //  TODO
+    }
+
+    public boolean contains(T object) {
+        return objects.contains(AABBTreeObject.create(object));
+    }
+
+    public int size() {
+        return objects.size();
     }
 }
