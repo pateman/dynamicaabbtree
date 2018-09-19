@@ -7,20 +7,14 @@ import static pl.pateman.gunwo.aabbtree.AABBTreeNode.INVALID_NODE_INDEX;
 final class AABBTreeObject<E extends Identifiable>
 {
    private final E data;
-   private final int nodeIndex;
 
-   private AABBTreeObject(E data, int nodeIndex)
+   private AABBTreeObject(E data)
    {
       this.data = data;
-      this.nodeIndex = nodeIndex;
    }
 
    static <E extends Identifiable> AABBTreeObject<E> create(E data) {
-      return new AABBTreeObject<>(data, INVALID_NODE_INDEX);
-   }
-
-   static <E extends Identifiable> AABBTreeObject<E> create(E data, int nodeIndex) {
-      return new AABBTreeObject<>(data, nodeIndex);
+      return new AABBTreeObject<>(data);
    }
 
    @Override
@@ -47,10 +41,5 @@ final class AABBTreeObject<E extends Identifiable>
    E getData()
    {
       return data;
-   }
-
-   int getNodeIndex()
-   {
-      return nodeIndex;
    }
 }

@@ -4,9 +4,9 @@ import org.joml.AABBf;
 import pl.pateman.gunwo.aabbtree.AABBTreeHeuristicFunction.HeuristicResult;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import static java.lang.Math.max;
 import static pl.pateman.gunwo.aabbtree.AABBTreeNode.INVALID_NODE_INDEX;
@@ -22,7 +22,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
 
     private final List<AABBTreeNode<T>> nodes;
     private final AABBTreeHeuristicFunction<T> insertionHeuristicFunction;
-    private final Set<AABBTreeObject<T>> objects;
+    private final Map<AABBTreeObject<T>, Integer> objects;
 
     private int root;
     private float fatAABBMargin;
@@ -38,7 +38,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
         if (this.insertionHeuristicFunction == null) {
             throw new IllegalArgumentException("A valid insertion heuristic function is required");
         }
-        objects = new HashSet<>();
+        objects = new HashMap<>();
         this.fatAABBMargin = fatAABBMargin;
     }
 
@@ -242,7 +242,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
             insertNode(newNodeIndex);
         }
 
-        objects.add(AABBTreeObject.create(object, newNodeIndex));
+        objects.put(AABBTreeObject.create(object), newNodeIndex);
     }
 
     public void clear() {
@@ -258,11 +258,52 @@ public final class AABBTree<T extends Boundable & Identifiable> {
             return;
         }
 
-        //  TODO
+        remove(object);
+        add(object);
+    }
+
+    public void remove(T object) {
+        Integer objectNodeIndex = objects.remove(AABBTreeObject.create(object));
+        if (objectNodeIndex == null)
+        {
+            return;
+        }
+
+        if (root == INVALID_NODE_INDEX || objectNodeIndex == root)
+        {
+            root = INVALID_NODE_INDEX;
+            return;
+        }
+
+        AABBTreeNode<T> node = getNodeAt(objectNodeIndex);
+        AABBTreeNode<T> nodeParent = node.getParent() == INVALID_NODE_INDEX ? null : getNodeAt(node.getParent());
+        AABBTreeNode<T> nodeGrandparent = nodeParent == null || nodeParent.getParent() == INVALID_NODE_INDEX ? null : getNodeAt(nodeParent.getParent());
+        AABBTreeNode<T> nodeSibling = null;
+        if (nodeParent != null)
+        {
+          nodeSibling = nodeParent.getLeftChild() == objectNodeIndex ? getNodeAt(nodeParent.getRightChild()) : getNodeAt(nodeParent.getLeftChild());
+        }
+
+       if (nodeGrandparent != null)
+       {
+          root = nodeSibling.getIndex();
+          nodeSibling.setParent(INVALID_NODE_INDEX);
+          return;
+       }
+
+       if (nodeGrandparent.getLeftChild() == nodeParent.getIndex())
+       {
+          nodeGrandparent.assignChild(LEFT_CHILD, nodeSibling.getIndex());
+       } else {
+          nodeGrandparent.assignChild(RIGHT_CHILD, nodeSibling.getIndex());
+       }
+
+       nodeSibling.setParent(nodeGrandparent.getIndex());
+       syncUpHierarchy(nodeGrandparent);
     }
 
     public boolean contains(T object) {
-        return objects.contains(AABBTreeObject.create(object));
+        return objects.containsKey(AABBTreeObject.create(object));
     }
 
     public int size() {
