@@ -3,7 +3,9 @@ package pl.pateman.gunwo.aabbtree;
 import org.joml.AABBf;
 import pl.pateman.gunwo.aabbtree.AABBTreeHeuristicFunction.HeuristicResult;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +25,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
     private final List<AABBTreeNode<T>> nodes;
     private final AABBTreeHeuristicFunction<T> insertionHeuristicFunction;
     private final Map<AABBTreeObject<T>, Integer> objects;
+    private final Deque<Integer> freeNodes;
 
     private int root;
     private float fatAABBMargin;
@@ -39,10 +42,31 @@ public final class AABBTree<T extends Boundable & Identifiable> {
             throw new IllegalArgumentException("A valid insertion heuristic function is required");
         }
         objects = new HashMap<>();
+       freeNodes = new ArrayDeque<>();
         this.fatAABBMargin = fatAABBMargin;
     }
 
+    private AABBTreeNode<T> allocateNode() {
+       if (freeNodes.isEmpty())
+       {
+          return new AABBTreeNode<>();
+       }
+       Integer freeIndex = freeNodes.pop();
+
+       AABBTreeNode<T> aabbTreeNode = nodes.get(freeIndex);
+       aabbTreeNode.resetForReuse();
+       return aabbTreeNode;
+    }
+
+    private void deallocateNode(AABBTreeNode<T> node) {
+       freeNodes.offer(node.getIndex());
+    }
+
     private int addNodeAndGetIndex(AABBTreeNode<T> node) {
+       if (node.getIndex() != INVALID_NODE_INDEX)
+       {
+          return node.getIndex();
+       }
         nodes.add(node);
         int idx = nodes.size() - 1;
         node.setIndex(idx);
@@ -50,7 +74,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
     }
 
     private AABBTreeNode<T> createLeafNode(T object) {
-        AABBTreeNode<T> leafNode = new AABBTreeNode<>();
+        AABBTreeNode<T> leafNode = allocateNode();
         leafNode.setData(object);
         leafNode.computeAABBWithMargin(fatAABBMargin);
         return leafNode;
@@ -65,7 +89,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
     }
 
     private AABBTreeNode<T> createBranchNode(AABBTreeNode<T> childA, AABBTreeNode<T> childB) {
-        AABBTreeNode<T> branchNode = new AABBTreeNode<>();
+        AABBTreeNode<T> branchNode = allocateNode();
         branchNode.assignChildren(childA.getIndex(), childB.getIndex());
 
         int branchNodeIndex = addNodeAndGetIndex(branchNode);
@@ -181,7 +205,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
     }
 
     private void syncUpHierarchy(AABBTreeNode<T> startingPoint) {
-        AABBTreeNode<T> node = getNodeAt(startingPoint.getParent());
+        AABBTreeNode<T> node = startingPoint.getParent() == INVALID_NODE_INDEX ? null : getNodeAt(startingPoint.getParent());
         while (node != null && node.getIndex() != INVALID_NODE_INDEX) {
             node = balanceNode(node);
 
@@ -248,6 +272,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
     public void clear() {
         nodes.clear();
         objects.clear();
+        freeNodes.clear();
         root = INVALID_NODE_INDEX;
     }
 
@@ -282,9 +307,11 @@ public final class AABBTree<T extends Boundable & Identifiable> {
         if (nodeParent != null)
         {
           nodeSibling = nodeParent.getLeftChild() == objectNodeIndex ? getNodeAt(nodeParent.getRightChild()) : getNodeAt(nodeParent.getLeftChild());
+          deallocateNode(nodeParent);
         }
+        deallocateNode(node);
 
-       if (nodeGrandparent != null)
+       if (nodeGrandparent == null)
        {
           root = nodeSibling.getIndex();
           nodeSibling.setParent(INVALID_NODE_INDEX);

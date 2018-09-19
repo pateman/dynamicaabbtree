@@ -2,8 +2,6 @@ package pl.pateman.gunwo.aabbtree;
 
 import org.joml.AABBf;
 
-import java.util.Arrays;
-
 final class AABBTreeNode<E extends Boundable> {
     private static final int MAX_NUM_OF_CHILDREN_PER_NODE = 2;
     static final int INVALID_NODE_INDEX = -1;
@@ -24,6 +22,7 @@ final class AABBTreeNode<E extends Boundable> {
 
         aabb = new AABBf();
         parent = INVALID_NODE_INDEX;
+        index = INVALID_NODE_INDEX;
     }
 
     boolean isLeaf() {
@@ -54,6 +53,15 @@ final class AABBTreeNode<E extends Boundable> {
         AABBf dataAABB = data.getAABB(aabb);
         aabb.setMin(dataAABB.minX - margin, dataAABB.minY - margin, dataAABB.minZ - margin);
         aabb.setMax(dataAABB.maxX + margin, dataAABB.maxY + margin, dataAABB.maxZ + margin);
+    }
+
+    void resetForReuse() {
+        assignChildren(INVALID_NODE_INDEX, INVALID_NODE_INDEX);
+        setData(null);
+        setParent(INVALID_NODE_INDEX);
+
+        aabb.setMin(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY);
+        aabb.setMax(Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
     }
 
     int getLeftChild() {

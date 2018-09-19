@@ -11,9 +11,12 @@ public class AABBTreeMain {
     AABBTree<Rect> aabbTree = new AABBTree<>();
 
     aabbTree.add(new Rect(0, 0.0f, 0.0f, 10.0f, 10.0f));
-    aabbTree.add(new Rect(1, 11.0f, 0.0f, 5.0f, 15.0f));
+    Rect object = new Rect(1, 11.0f, 0.0f, 5.0f, 15.0f);
+    aabbTree.add(object);
     aabbTree.add(new Rect(2, -3.0f, 1.0f, 10.0f, 4.0f));
     aabbTree.add(new Rect(3, -8.0f, 5.0f, 25.0f, 138.0f));
+    aabbTree.remove(object);
+    aabbTree.add(object);
     System.out.println("w");
   }
 
