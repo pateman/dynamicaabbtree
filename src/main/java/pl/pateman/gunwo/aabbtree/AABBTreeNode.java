@@ -26,10 +26,6 @@ class AABBTreeNode<E extends Boundable> {
         parent = INVALID_NODE_INDEX;
     }
 
-    private void assignChild(int whichChild, int childIndex) {
-        children[whichChild] = childIndex;
-    }
-
     boolean isLeaf() {
         return children[LEFT_CHILD] == INVALID_NODE_INDEX;
     }
@@ -40,6 +36,10 @@ class AABBTreeNode<E extends Boundable> {
         } else if (children[RIGHT_CHILD] == childIndexToReplace) {
             assignChild(RIGHT_CHILD, replacement);
         }
+    }
+
+    void assignChild(int whichChild, int childIndex) {
+        children[whichChild] = childIndex;
     }
 
     void assignChildren(int childA, int childB) {

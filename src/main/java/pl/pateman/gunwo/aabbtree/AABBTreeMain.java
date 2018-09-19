@@ -13,6 +13,7 @@ public class AABBTreeMain {
     aabbTree.add(new Rect(0.0f, 0.0f, 10.0f, 10.0f));
     aabbTree.add(new Rect(11.0f, 0.0f, 5.0f, 15.0f));
     aabbTree.add(new Rect(-3.0f, 1.0f, 10.0f, 4.0f));
+    aabbTree.add(new Rect(-8.0f, 5.0f, 25.0f, 138.0f));
     System.out.println("w");
   }
 

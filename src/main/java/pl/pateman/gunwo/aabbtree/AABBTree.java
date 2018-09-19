@@ -6,12 +6,15 @@ import pl.pateman.gunwo.aabbtree.AABBTreeHeuristicFunction.HeuristicResult;
 import java.util.ArrayList;
 import java.util.List;
 
-import static pl.pateman.gunwo.aabbtree.AABBTreeNode.*;
+import static java.lang.Math.max;
+import static pl.pateman.gunwo.aabbtree.AABBTreeNode.INVALID_NODE_INDEX;
+import static pl.pateman.gunwo.aabbtree.AABBTreeNode.LEFT_CHILD;
+import static pl.pateman.gunwo.aabbtree.AABBTreeNode.RIGHT_CHILD;
 
 /**
  * Created by pateman.
  */
-public class AABBTree<T extends Boundable> {
+public final class AABBTree<T extends Boundable> {
 
     public static final float DEFAULT_FAT_AABB_MARGIN = 0.2f;
 
@@ -35,21 +38,21 @@ public class AABBTree<T extends Boundable> {
         this.fatAABBMargin = fatAABBMargin;
     }
 
-    protected int addNodeAndGetIndex(AABBTreeNode<T> node) {
+    private int addNodeAndGetIndex(AABBTreeNode<T> node) {
         nodes.add(node);
         int idx = nodes.size() - 1;
         node.setIndex(idx);
         return idx;
     }
 
-    protected AABBTreeNode<T> createLeafNode(T object) {
+    private AABBTreeNode<T> createLeafNode(T object) {
         AABBTreeNode<T> leafNode = new AABBTreeNode<>();
         leafNode.setData(object);
         leafNode.computeAABBWithMargin(fatAABBMargin);
         return leafNode;
     }
 
-    protected void moveNodeToParent(AABBTreeNode<T> node, int newParentIndex) {
+    private void moveNodeToParent(AABBTreeNode<T> node, int newParentIndex) {
         int oldParentIndex = node.getParent();
         if (oldParentIndex != INVALID_NODE_INDEX) {
             getNodeAt(oldParentIndex).replaceChild(node.getIndex(), newParentIndex);
@@ -57,7 +60,7 @@ public class AABBTree<T extends Boundable> {
         node.setParent(newParentIndex);
     }
 
-    protected AABBTreeNode<T> createBranchNode(AABBTreeNode<T> childA, AABBTreeNode<T> childB) {
+    private AABBTreeNode<T> createBranchNode(AABBTreeNode<T> childA, AABBTreeNode<T> childB) {
         AABBTreeNode<T> branchNode = new AABBTreeNode<>();
         branchNode.assignChildren(childA.getIndex(), childB.getIndex());
 
@@ -68,11 +71,127 @@ public class AABBTree<T extends Boundable> {
         return branchNode;
     }
 
-    protected AABBTreeNode<T> getNodeAt(int index) {
+    private AABBTreeNode<T> getNodeAt(int index) {
         return nodes.get(index);
     }
 
-    protected void insertNode(int node) {
+    private AABBTreeNode<T> balanceRight(AABBTreeNode<T> node, AABBTreeNode<T> left, AABBTreeNode<T> right) {
+        AABBTreeNode<T> rightLeftChild = getNodeAt(right.getChildren()[LEFT_CHILD]);
+        AABBTreeNode<T> rightRightChild = getNodeAt(right.getChildren()[RIGHT_CHILD]);
+
+        right.assignChild(LEFT_CHILD, node.getIndex());
+        right.setParent(node.getParent());
+        node.setParent(right.getIndex());
+
+        if (right.getParent() != INVALID_NODE_INDEX) {
+            AABBTreeNode<T> rightParent = getNodeAt(right.getParent());
+            if (rightParent.getChildren()[LEFT_CHILD] == node.getIndex())
+            {
+                rightParent.assignChild(LEFT_CHILD, right.getIndex());
+            } else {
+                rightParent.assignChild(RIGHT_CHILD, right.getIndex());
+            }
+        } else {
+            root = right.getIndex();
+        }
+
+        if (rightLeftChild.getHeight() > rightRightChild.getHeight()) {
+            right.assignChild(RIGHT_CHILD, rightLeftChild.getIndex());
+            node.assignChild(RIGHT_CHILD, rightRightChild.getIndex());
+            rightRightChild.setParent(node.getIndex());
+            left.getAABB().union(rightRightChild.getAABB(), node.getAABB());
+            node.getAABB().union(rightLeftChild.getAABB(), right.getAABB());
+            node.setHeight(1 + max(left.getHeight(), rightRightChild.getHeight()));
+            right.setHeight(1 + max(node.getHeight(), rightLeftChild.getHeight()));
+        } else {
+            right.assignChild(RIGHT_CHILD, rightRightChild.getIndex());
+            node.assignChild(RIGHT_CHILD, rightLeftChild.getIndex());
+            rightLeftChild.setParent(node.getIndex());
+            left.getAABB().union(rightLeftChild.getAABB(), node.getAABB());
+            node.getAABB().union(rightRightChild.getAABB(), right.getAABB());
+            node.setHeight(1 + max(left.getHeight(), rightLeftChild.getHeight()));
+            right.setHeight(1 + max(node.getHeight(), rightRightChild.getHeight()));
+        }
+
+        return right;
+    }
+
+    private AABBTreeNode<T> balanceLeft(AABBTreeNode<T> node, AABBTreeNode<T> left, AABBTreeNode<T> right) {
+        AABBTreeNode<T> leftLeftChild = getNodeAt(left.getChildren()[LEFT_CHILD]);
+        AABBTreeNode<T> leftRightChild = getNodeAt(left.getChildren()[RIGHT_CHILD]);
+
+        left.assignChild(LEFT_CHILD, node.getIndex());
+        left.setParent(node.getParent());
+        node.setParent(left.getIndex());
+
+        if (left.getParent() != INVALID_NODE_INDEX) {
+            AABBTreeNode<T> leftParent = getNodeAt(left.getParent());
+            if (leftParent.getChildren()[LEFT_CHILD] == node.getIndex()) {
+                leftParent.assignChild(LEFT_CHILD, left.getIndex());
+            } else {
+                leftParent.assignChild(RIGHT_CHILD, left.getIndex());
+            }
+        } else {
+            root = left.getIndex();
+        }
+
+        if (leftLeftChild.getHeight() > leftRightChild.getHeight()) {
+            left.assignChild(RIGHT_CHILD, leftLeftChild.getIndex());
+            node.assignChild(LEFT_CHILD, leftRightChild.getIndex());
+            leftRightChild.setParent(node.getIndex());
+            right.getAABB().union(leftRightChild.getAABB(), node.getAABB());
+            node.getAABB().union(leftLeftChild.getAABB(), left.getAABB());
+            node.setHeight(1 + max(right.getHeight(), leftRightChild.getHeight()));
+            left.setHeight(1 + max(node.getHeight(), leftLeftChild.getHeight()));
+        } else {
+            left.assignChild(RIGHT_CHILD, leftRightChild.getIndex());
+            node.assignChild(LEFT_CHILD, leftLeftChild.getIndex());
+            leftLeftChild.setParent(node.getIndex());
+            right.getAABB().union(leftLeftChild.getAABB(), node.getAABB());
+            node.getAABB().union(leftRightChild.getAABB(), left.getAABB());
+            node.setHeight(1 + max(right.getHeight(), leftLeftChild.getHeight()));
+            left.setHeight(1 + max(node.getHeight(), leftRightChild.getHeight()));
+        }
+
+        return left;
+    }
+
+    private AABBTreeNode<T> balanceNode(AABBTreeNode<T> node) {
+        if (node.isLeaf() || node.getHeight() < 2)
+        {
+            return node;
+        }
+
+        AABBTreeNode<T> left = getNodeAt(node.getChildren()[LEFT_CHILD]);
+        AABBTreeNode<T> right = getNodeAt(node.getChildren()[RIGHT_CHILD]);
+
+        int balance = right.getHeight() - left.getHeight();
+
+        if (balance > 1) {
+            return balanceRight(node, left, right);
+        }
+        if (balance < -1) {
+            return balanceLeft(node, left, right);
+        }
+        return node;
+    }
+
+    private void syncUpHierarchy(AABBTreeNode<T> startingPoint) {
+        AABBTreeNode<T> node = getNodeAt(startingPoint.getParent());
+        while (node != null && node.getIndex() != INVALID_NODE_INDEX) {
+            node = balanceNode(node);
+
+            AABBTreeNode<T> left = getNodeAt(node.getChildren()[LEFT_CHILD]);
+            AABBTreeNode<T> right = getNodeAt(node.getChildren()[RIGHT_CHILD]);
+
+            node.setHeight(1 + max(left.getHeight(), right.getHeight()));
+            left.getAABB().union(right.getAABB(), node.getAABB());
+
+            node = node.getParent() == INVALID_NODE_INDEX ? null : getNodeAt(node.getParent());
+        }
+    }
+
+    private void insertNode(int node) {
         AABBTreeNode<T> nodeToAdd = getNodeAt(node);
         AABBTreeNode<T> parentNode = getNodeAt(root);
 
@@ -100,7 +219,7 @@ public class AABBTree<T extends Boundable> {
             newParent.setParent(INVALID_NODE_INDEX);
         }
 
-        //  TODO: balance the tree
+        syncUpHierarchy(nodeToAdd);
     }
 
     public void add(T object) {
