@@ -56,8 +56,12 @@ class AABBTreeNode<E extends Boundable> {
         this.aabb.setMax(dataAABB.maxX + margin, dataAABB.maxY + margin, dataAABB.maxZ + margin);
     }
 
-    int[] getChildren() {
-        return children;
+    int getLeftChild() {
+        return children[LEFT_CHILD];
+    }
+
+    int getRightChild() {
+        return children[RIGHT_CHILD];
     }
 
     AABBf getAABB() {

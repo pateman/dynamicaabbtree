@@ -76,8 +76,8 @@ public final class AABBTree<T extends Boundable> {
     }
 
     private AABBTreeNode<T> balanceRight(AABBTreeNode<T> node, AABBTreeNode<T> left, AABBTreeNode<T> right) {
-        AABBTreeNode<T> rightLeftChild = getNodeAt(right.getChildren()[LEFT_CHILD]);
-        AABBTreeNode<T> rightRightChild = getNodeAt(right.getChildren()[RIGHT_CHILD]);
+        AABBTreeNode<T> rightLeftChild = getNodeAt(right.getLeftChild());
+        AABBTreeNode<T> rightRightChild = getNodeAt(right.getRightChild());
 
         right.assignChild(LEFT_CHILD, node.getIndex());
         right.setParent(node.getParent());
@@ -85,7 +85,7 @@ public final class AABBTree<T extends Boundable> {
 
         if (right.getParent() != INVALID_NODE_INDEX) {
             AABBTreeNode<T> rightParent = getNodeAt(right.getParent());
-            if (rightParent.getChildren()[LEFT_CHILD] == node.getIndex())
+            if (rightParent.getLeftChild() == node.getIndex())
             {
                 rightParent.assignChild(LEFT_CHILD, right.getIndex());
             } else {
@@ -117,8 +117,8 @@ public final class AABBTree<T extends Boundable> {
     }
 
     private AABBTreeNode<T> balanceLeft(AABBTreeNode<T> node, AABBTreeNode<T> left, AABBTreeNode<T> right) {
-        AABBTreeNode<T> leftLeftChild = getNodeAt(left.getChildren()[LEFT_CHILD]);
-        AABBTreeNode<T> leftRightChild = getNodeAt(left.getChildren()[RIGHT_CHILD]);
+        AABBTreeNode<T> leftLeftChild = getNodeAt(left.getLeftChild());
+        AABBTreeNode<T> leftRightChild = getNodeAt(left.getRightChild());
 
         left.assignChild(LEFT_CHILD, node.getIndex());
         left.setParent(node.getParent());
@@ -126,7 +126,7 @@ public final class AABBTree<T extends Boundable> {
 
         if (left.getParent() != INVALID_NODE_INDEX) {
             AABBTreeNode<T> leftParent = getNodeAt(left.getParent());
-            if (leftParent.getChildren()[LEFT_CHILD] == node.getIndex()) {
+            if (leftParent.getLeftChild() == node.getIndex()) {
                 leftParent.assignChild(LEFT_CHILD, left.getIndex());
             } else {
                 leftParent.assignChild(RIGHT_CHILD, left.getIndex());
@@ -162,8 +162,8 @@ public final class AABBTree<T extends Boundable> {
             return node;
         }
 
-        AABBTreeNode<T> left = getNodeAt(node.getChildren()[LEFT_CHILD]);
-        AABBTreeNode<T> right = getNodeAt(node.getChildren()[RIGHT_CHILD]);
+        AABBTreeNode<T> left = getNodeAt(node.getLeftChild());
+        AABBTreeNode<T> right = getNodeAt(node.getRightChild());
 
         int balance = right.getHeight() - left.getHeight();
 
@@ -181,8 +181,8 @@ public final class AABBTree<T extends Boundable> {
         while (node != null && node.getIndex() != INVALID_NODE_INDEX) {
             node = balanceNode(node);
 
-            AABBTreeNode<T> left = getNodeAt(node.getChildren()[LEFT_CHILD]);
-            AABBTreeNode<T> right = getNodeAt(node.getChildren()[RIGHT_CHILD]);
+            AABBTreeNode<T> left = getNodeAt(node.getLeftChild());
+            AABBTreeNode<T> right = getNodeAt(node.getRightChild());
 
             node.setHeight(1 + max(left.getHeight(), right.getHeight()));
             left.getAABB().union(right.getAABB(), node.getAABB());
@@ -198,15 +198,14 @@ public final class AABBTree<T extends Boundable> {
         AABBf nodeToAddAABB = nodeToAdd.getAABB();
 
         while (!parentNode.isLeaf()) {
-            int[] parentNodeChildren = parentNode.getChildren();
-            AABBf aabbA = getNodeAt(parentNodeChildren[LEFT_CHILD]).getAABB();
-            AABBf aabbB = getNodeAt(parentNodeChildren[RIGHT_CHILD]).getAABB();
+            AABBTreeNode<T> leftChild = getNodeAt(parentNode.getLeftChild());
+            AABBTreeNode<T> rightChild = getNodeAt(parentNode.getRightChild());
+            AABBf aabbA = leftChild.getAABB();
+            AABBf aabbB = rightChild.getAABB();
 
             HeuristicResult heuristicResult = insertionHeuristicFunction
                     .getInsertionHeuristic(aabbA, aabbB, nodeToAdd.getData(), nodeToAddAABB);
-
-            parentNode = HeuristicResult.LEFT.equals(heuristicResult) ? getNodeAt(parentNodeChildren[LEFT_CHILD]) :
-                    getNodeAt(parentNodeChildren[RIGHT_CHILD]);
+            parentNode = HeuristicResult.LEFT.equals(heuristicResult) ? leftChild : rightChild;
         }
 
         int oldParentIndex = parentNode.getParent();
