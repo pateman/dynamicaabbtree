@@ -232,4 +232,8 @@ public final class AABBTree<T extends Boundable> {
         insertNode(addNodeAndGetIndex(leafNode));
     }
 
+    public void clear() {
+        nodes.clear();
+        root = INVALID_NODE_INDEX;
+    }
 }
