@@ -35,12 +35,13 @@ public final class CollisionPair<T extends Boundable & Identifiable>
          return false;
       }
       CollisionPair<?> that = (CollisionPair<?>) o;
-      return Objects.equals(objectA.getID(), that.objectA.getID()) && Objects.equals(objectB.getID(), that.objectB.getID());
+      return (Objects.equals(objectA.getID(), that.objectA.getID()) || Objects.equals(objectA.getID(), that.objectB.getID())) &&
+         (Objects.equals(objectB.getID(), that.objectB.getID()) || Objects.equals(objectB.getID(), that.objectA.getID()));
    }
 
    @Override
    public int hashCode()
    {
-      return Objects.hash(objectA.getID(), objectB.getID());
+      return Objects.hash(objectA.getID(), objectB.getID()) ^ Objects.hash(objectB.getID(), objectA.getID());
    }
 }
