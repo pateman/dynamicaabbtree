@@ -255,6 +255,42 @@ public final class AABBTree<T extends Boundable & Identifiable> {
         syncUpHierarchy(nodeToAdd);
     }
 
+   private void detectCollisionPairsWithNode(AABBTreeNode<T> nodeToTest, CollisionFilter<T> filter, Set<CollisionPair<T>> alreadyTested,
+      List<CollisionPair<T>> result)
+   {
+      Deque<Integer> stack = new ArrayDeque<>();
+      stack.offer(root);
+      AABBf overlapWith = nodeToTest.getAABB();
+
+      while (!stack.isEmpty()) {
+         Integer nodeIndex = stack.pop();
+         if (nodeIndex == INVALID_NODE_INDEX)
+         {
+            continue;
+         }
+
+         AABBTreeNode<T> node = getNodeAt(nodeIndex);
+         AABBf nodeAABB = node.getAABB();
+         if (nodeAABB.testAABB(overlapWith))
+         {
+            if (node.isLeaf())
+            {
+               T nodeData = node.getData();
+               T testedData = nodeToTest.getData();
+               CollisionPair<T> collisionPair = new CollisionPair<>(testedData, nodeData);
+               if (filter.test(testedData, nodeData) && !alreadyTested.contains(collisionPair))
+               {
+                  alreadyTested.add(collisionPair);
+                  result.add(collisionPair);
+               }
+            } else {
+               stack.offer(node.getLeftChild());
+               stack.offer(node.getRightChild());
+            }
+         }
+      }
+   }
+
     public void add(T object) {
         if (contains(object))
         {
@@ -386,7 +422,6 @@ public final class AABBTree<T extends Boundable & Identifiable> {
           return;
        }
 
-       Deque<Integer> stack = new ArrayDeque<>();
        Set<CollisionPair<T>> alreadyTested = new HashSet<>();
 
        for (int i = 0; i < nodes.size(); i++)
@@ -397,44 +432,11 @@ public final class AABBTree<T extends Boundable & Identifiable> {
              continue;
           }
 
-          stack.clear();
-          stack.offer(root);
-          AABBf overlapWith = testedNode.getAABB();
-
-          while (!stack.isEmpty()) {
-             Integer nodeIndex = stack.pop();
-             if (nodeIndex == INVALID_NODE_INDEX)
-             {
-                continue;
-             }
-
-             AABBTreeNode<T> node = getNodeAt(nodeIndex);
-             AABBf nodeAABB = node.getAABB();
-             if (nodeAABB.testAABB(overlapWith))
-             {
-                if (node.isLeaf())
-                {
-                   T nodeData = node.getData();
-                   T testedData = testedNode.getData();
-                   if (filter.test(testedData, nodeData))
-                   {
-                      CollisionPair<T> collisionPair = new CollisionPair<>(testedData, nodeData);
-                      if (!alreadyTested.contains(collisionPair))
-                      {
-                         alreadyTested.add(collisionPair);
-                         result.add(collisionPair);
-                      }
-                   }
-                } else {
-                   stack.offer(node.getLeftChild());
-                   stack.offer(node.getRightChild());
-                }
-             }
-          }
+          detectCollisionPairsWithNode(testedNode, filter, alreadyTested, result);
        }
     }
 
-    public boolean contains(T object) {
+   public boolean contains(T object) {
         return objects.containsKey(AABBTreeObject.create(object));
     }
 
