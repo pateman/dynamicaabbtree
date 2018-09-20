@@ -5,6 +5,7 @@ import pl.pateman.gunwo.aabbtree.AABBTreeHeuristicFunction.HeuristicResult;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -327,6 +328,41 @@ public final class AABBTree<T extends Boundable & Identifiable> {
 
        nodeSibling.setParent(nodeGrandparent.getIndex());
        syncUpHierarchy(nodeGrandparent);
+    }
+
+    public List<T> detectOverlaps(AABBf overlapWith) {
+       if (root == INVALID_NODE_INDEX)
+       {
+          return Collections.emptyList();
+       }
+
+       Deque<Integer> stack = new ArrayDeque<>();
+       List<T> result = new ArrayList<>(size() / 2);
+
+       stack.offer(root);
+
+       while (!stack.isEmpty()) {
+          Integer nodeIndex = stack.pop();
+          if (nodeIndex == INVALID_NODE_INDEX)
+          {
+             continue;
+          }
+
+          AABBTreeNode<T> node = getNodeAt(nodeIndex);
+          AABBf nodeAABB = node.getAABB();
+          if (nodeAABB.testAABB(overlapWith))
+          {
+             if (node.isLeaf())
+             {
+                result.add(node.getData());
+             } else {
+                stack.offer(node.getLeftChild());
+                stack.offer(node.getRightChild());
+             }
+          }
+       }
+
+       return Collections.unmodifiableList(result);
     }
 
     public boolean contains(T object) {
