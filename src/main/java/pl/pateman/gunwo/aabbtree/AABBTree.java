@@ -1,6 +1,8 @@
 package pl.pateman.gunwo.aabbtree;
 
 import org.joml.AABBf;
+import org.joml.FrustumIntersection;
+import org.joml.Matrix4fc;
 import pl.pateman.gunwo.aabbtree.AABBTreeHeuristicFunction.HeuristicResult;
 
 import java.util.ArrayDeque;
@@ -273,7 +275,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
          AABBf nodeAABB = node.getAABB();
          if (nodeAABB.testAABB(overlapWith))
          {
-            if (node.isLeaf())
+            if (node.isLeaf() && node.getIndex() != nodeToTest.getIndex())
             {
                T nodeData = node.getData();
                T testedData = nodeToTest.getData();
@@ -433,6 +435,47 @@ public final class AABBTree<T extends Boundable & Identifiable> {
           }
 
           detectCollisionPairsWithNode(testedNode, filter, alreadyTested, result);
+       }
+    }
+
+    public void detectInFrustum(Matrix4fc worldViewProjection, List<T> result) {
+       detectInFrustum(worldViewProjection, defaultAABBOverlapFilter, result);
+    }
+
+    public void detectInFrustum(Matrix4fc worldViewProjection, AABBOverlapFilter<T> filter, List<T> result) {
+       result.clear();
+       if (root == INVALID_NODE_INDEX)
+       {
+          return;
+       }
+
+       Deque<Integer> stack = new ArrayDeque<>();
+       stack.offer(root);
+       FrustumIntersection frustumIntersection = new FrustumIntersection(worldViewProjection, false);
+
+       while (!stack.isEmpty()) {
+          Integer nodeIndex = stack.pop();
+          if (nodeIndex == INVALID_NODE_INDEX)
+          {
+             continue;
+          }
+
+          AABBTreeNode<T> node = getNodeAt(nodeIndex);
+          AABBf nodeAABB = node.getAABB();
+          if (frustumIntersection.testAab(nodeAABB.minX, nodeAABB.minY, nodeAABB.minZ, nodeAABB.maxX, nodeAABB.maxY, nodeAABB.maxZ))
+          {
+             if (node.isLeaf())
+             {
+                T nodeData = node.getData();
+                if (filter.test(nodeData))
+                {
+                   result.add(nodeData);
+                }
+             } else {
+                stack.offer(node.getLeftChild());
+                stack.offer(node.getRightChild());
+             }
+          }
        }
     }
 
