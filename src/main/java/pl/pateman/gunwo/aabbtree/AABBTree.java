@@ -48,33 +48,31 @@ public final class AABBTree<T extends Boundable & Identifiable> {
             throw new IllegalArgumentException("A valid insertion heuristic function is required");
         }
         objects = new HashMap<>();
-       freeNodes = new ArrayDeque<>();
-       defaultAABBOverlapFilter = new DefaultAABBOverlapFilter<>();
-       defaultCollisionFilter = new DefaultCollisionFilter<>();
+        freeNodes = new ArrayDeque<>();
+        defaultAABBOverlapFilter = new DefaultAABBOverlapFilter<>();
+        defaultCollisionFilter = new DefaultCollisionFilter<>();
         this.fatAABBMargin = fatAABBMargin;
     }
 
     private AABBTreeNode<T> allocateNode() {
-       if (freeNodes.isEmpty())
-       {
-          return new AABBTreeNode<>();
-       }
-       Integer freeIndex = freeNodes.pop();
+        if (freeNodes.isEmpty()) {
+            return new AABBTreeNode<>();
+        }
+        Integer freeIndex = freeNodes.pop();
 
-       AABBTreeNode<T> aabbTreeNode = nodes.get(freeIndex);
-       aabbTreeNode.resetForReuse();
-       return aabbTreeNode;
+        AABBTreeNode<T> aabbTreeNode = nodes.get(freeIndex);
+        aabbTreeNode.resetForReuse();
+        return aabbTreeNode;
     }
 
     private void deallocateNode(AABBTreeNode<T> node) {
-       freeNodes.offer(node.getIndex());
+        freeNodes.offer(node.getIndex());
     }
 
     private int addNodeAndGetIndex(AABBTreeNode<T> node) {
-       if (node.getIndex() != INVALID_NODE_INDEX)
-       {
-          return node.getIndex();
-       }
+        if (node.getIndex() != INVALID_NODE_INDEX) {
+            return node.getIndex();
+        }
         nodes.add(node);
         int idx = nodes.size() - 1;
         node.setIndex(idx);
@@ -121,8 +119,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
 
         if (right.getParent() != INVALID_NODE_INDEX) {
             AABBTreeNode<T> rightParent = getNodeAt(right.getParent());
-            if (rightParent.getLeftChild() == node.getIndex())
-            {
+            if (rightParent.getLeftChild() == node.getIndex()) {
                 rightParent.assignChild(LEFT_CHILD, right.getIndex());
             } else {
                 rightParent.assignChild(RIGHT_CHILD, right.getIndex());
@@ -193,8 +190,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
     }
 
     private AABBTreeNode<T> balanceNode(AABBTreeNode<T> node) {
-        if (node.isLeaf() || node.getHeight() < 2)
-        {
+        if (node.isLeaf() || node.getHeight() < 2) {
             return node;
         }
 
@@ -257,45 +253,39 @@ public final class AABBTree<T extends Boundable & Identifiable> {
         syncUpHierarchy(nodeToAdd);
     }
 
-   private void detectCollisionPairsWithNode(AABBTreeNode<T> nodeToTest, CollisionFilter<T> filter, Set<CollisionPair<T>> alreadyTested,
-      List<CollisionPair<T>> result)
-   {
-      Deque<Integer> stack = new ArrayDeque<>();
-      stack.offer(root);
-      AABBf overlapWith = nodeToTest.getAABB();
+    private void detectCollisionPairsWithNode(AABBTreeNode<T> nodeToTest, CollisionFilter<T> filter, Set<CollisionPair<T>> alreadyTested,
+                                              List<CollisionPair<T>> result) {
+        Deque<Integer> stack = new ArrayDeque<>();
+        stack.offer(root);
+        AABBf overlapWith = nodeToTest.getAABB();
 
-      while (!stack.isEmpty()) {
-         Integer nodeIndex = stack.pop();
-         if (nodeIndex == INVALID_NODE_INDEX)
-         {
-            continue;
-         }
-
-         AABBTreeNode<T> node = getNodeAt(nodeIndex);
-         AABBf nodeAABB = node.getAABB();
-         if (nodeAABB.testAABB(overlapWith))
-         {
-            if (node.isLeaf() && node.getIndex() != nodeToTest.getIndex())
-            {
-               T nodeData = node.getData();
-               T testedData = nodeToTest.getData();
-               CollisionPair<T> collisionPair = new CollisionPair<>(testedData, nodeData);
-               if (filter.test(testedData, nodeData) && !alreadyTested.contains(collisionPair))
-               {
-                  alreadyTested.add(collisionPair);
-                  result.add(collisionPair);
-               }
-            } else {
-               stack.offer(node.getLeftChild());
-               stack.offer(node.getRightChild());
+        while (!stack.isEmpty()) {
+            Integer nodeIndex = stack.pop();
+            if (nodeIndex == INVALID_NODE_INDEX) {
+                continue;
             }
-         }
-      }
-   }
+
+            AABBTreeNode<T> node = getNodeAt(nodeIndex);
+            AABBf nodeAABB = node.getAABB();
+            if (nodeAABB.testAABB(overlapWith)) {
+                if (node.isLeaf() && node.getIndex() != nodeToTest.getIndex()) {
+                    T nodeData = node.getData();
+                    T testedData = nodeToTest.getData();
+                    CollisionPair<T> collisionPair = new CollisionPair<>(testedData, nodeData);
+                    if (filter.test(testedData, nodeData) && !alreadyTested.contains(collisionPair)) {
+                        alreadyTested.add(collisionPair);
+                        result.add(collisionPair);
+                    }
+                } else {
+                    stack.offer(node.getLeftChild());
+                    stack.offer(node.getRightChild());
+                }
+            }
+        }
+    }
 
     public void add(T object) {
-        if (contains(object))
-        {
+        if (contains(object)) {
             update(object);
             return;
         }
@@ -305,8 +295,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
         int newNodeIndex = addNodeAndGetIndex(leafNode);
         if (root == INVALID_NODE_INDEX) {
             root = newNodeIndex;
-        } else
-        {
+        } else {
             insertNode(newNodeIndex);
         }
 
@@ -321,8 +310,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
     }
 
     public void update(T object) {
-        if (!contains(object))
-        {
+        if (!contains(object)) {
             add(object);
             return;
         }
@@ -333,13 +321,11 @@ public final class AABBTree<T extends Boundable & Identifiable> {
 
     public void remove(T object) {
         Integer objectNodeIndex = objects.remove(AABBTreeObject.create(object));
-        if (root == INVALID_NODE_INDEX || objectNodeIndex == null)
-        {
+        if (root == INVALID_NODE_INDEX || objectNodeIndex == null) {
             return;
         }
 
-        if (objectNodeIndex == root)
-        {
+        if (objectNodeIndex == root) {
             deallocateNode(getNodeAt(objectNodeIndex));
             root = INVALID_NODE_INDEX;
             return;
@@ -349,138 +335,122 @@ public final class AABBTree<T extends Boundable & Identifiable> {
         AABBTreeNode<T> nodeParent = node.getParent() == INVALID_NODE_INDEX ? null : getNodeAt(node.getParent());
         AABBTreeNode<T> nodeGrandparent = nodeParent == null || nodeParent.getParent() == INVALID_NODE_INDEX ? null : getNodeAt(nodeParent.getParent());
         AABBTreeNode<T> nodeSibling = null;
-        if (nodeParent != null)
-        {
-          nodeSibling = nodeParent.getLeftChild() == objectNodeIndex ? getNodeAt(nodeParent.getRightChild()) : getNodeAt(nodeParent.getLeftChild());
-          deallocateNode(nodeParent);
+        if (nodeParent != null) {
+            nodeSibling = nodeParent.getLeftChild() == objectNodeIndex ? getNodeAt(nodeParent.getRightChild()) : getNodeAt(nodeParent.getLeftChild());
+            deallocateNode(nodeParent);
         }
         deallocateNode(node);
 
-       if (nodeGrandparent == null)
-       {
-          root = nodeSibling.getIndex();
-          nodeSibling.setParent(INVALID_NODE_INDEX);
-          return;
-       }
+        if (nodeGrandparent == null) {
+            root = nodeSibling.getIndex();
+            nodeSibling.setParent(INVALID_NODE_INDEX);
+            return;
+        }
 
-       if (nodeGrandparent.getLeftChild() == nodeParent.getIndex())
-       {
-          nodeGrandparent.assignChild(LEFT_CHILD, nodeSibling.getIndex());
-       } else {
-          nodeGrandparent.assignChild(RIGHT_CHILD, nodeSibling.getIndex());
-       }
+        if (nodeGrandparent.getLeftChild() == nodeParent.getIndex()) {
+            nodeGrandparent.assignChild(LEFT_CHILD, nodeSibling.getIndex());
+        } else {
+            nodeGrandparent.assignChild(RIGHT_CHILD, nodeSibling.getIndex());
+        }
 
-       nodeSibling.setParent(nodeGrandparent.getIndex());
-       syncUpHierarchy(nodeGrandparent);
+        nodeSibling.setParent(nodeGrandparent.getIndex());
+        syncUpHierarchy(nodeGrandparent);
     }
 
     public void detectOverlaps(AABBf overlapWith, List<T> result) {
-       detectOverlaps(overlapWith, defaultAABBOverlapFilter, result);
+        detectOverlaps(overlapWith, defaultAABBOverlapFilter, result);
     }
 
     public void detectOverlaps(AABBf overlapWith, AABBOverlapFilter<T> filter, List<T> result) {
-       result.clear();
-       if (root == INVALID_NODE_INDEX)
-       {
-          return;
-       }
+        result.clear();
+        if (root == INVALID_NODE_INDEX) {
+            return;
+        }
 
-       Deque<Integer> stack = new ArrayDeque<>();
-       stack.offer(root);
+        Deque<Integer> stack = new ArrayDeque<>();
+        stack.offer(root);
 
-       while (!stack.isEmpty()) {
-          Integer nodeIndex = stack.pop();
-          if (nodeIndex == INVALID_NODE_INDEX)
-          {
-             continue;
-          }
+        while (!stack.isEmpty()) {
+            Integer nodeIndex = stack.pop();
+            if (nodeIndex == INVALID_NODE_INDEX) {
+                continue;
+            }
 
-          AABBTreeNode<T> node = getNodeAt(nodeIndex);
-          AABBf nodeAABB = node.getAABB();
-          if (nodeAABB.testAABB(overlapWith))
-          {
-             if (node.isLeaf())
-             {
-                T nodeData = node.getData();
-                if (filter.test(nodeData))
-                {
-                   result.add(nodeData);
+            AABBTreeNode<T> node = getNodeAt(nodeIndex);
+            AABBf nodeAABB = node.getAABB();
+            if (nodeAABB.testAABB(overlapWith)) {
+                if (node.isLeaf()) {
+                    T nodeData = node.getData();
+                    if (filter.test(nodeData)) {
+                        result.add(nodeData);
+                    }
+                } else {
+                    stack.offer(node.getLeftChild());
+                    stack.offer(node.getRightChild());
                 }
-             } else {
-                stack.offer(node.getLeftChild());
-                stack.offer(node.getRightChild());
-             }
-          }
-       }
+            }
+        }
     }
 
     public void detectCollisionPairs(List<CollisionPair<T>> result) {
-       detectCollisionPairs(defaultCollisionFilter, result);
+        detectCollisionPairs(defaultCollisionFilter, result);
     }
 
     public void detectCollisionPairs(CollisionFilter<T> filter, List<CollisionPair<T>> result) {
-       result.clear();
-       if (root == INVALID_NODE_INDEX)
-       {
-          return;
-       }
+        result.clear();
+        if (root == INVALID_NODE_INDEX) {
+            return;
+        }
 
-       Set<CollisionPair<T>> alreadyTested = new HashSet<>();
+        Set<CollisionPair<T>> alreadyTested = new HashSet<>();
 
-       for (int i = 0; i < nodes.size(); i++)
-       {
-          AABBTreeNode<T> testedNode = nodes.get(i);
-          if (!testedNode.isLeaf())
-          {
-             continue;
-          }
+        for (int i = 0; i < nodes.size(); i++) {
+            AABBTreeNode<T> testedNode = nodes.get(i);
+            if (!testedNode.isLeaf()) {
+                continue;
+            }
 
-          detectCollisionPairsWithNode(testedNode, filter, alreadyTested, result);
-       }
+            detectCollisionPairsWithNode(testedNode, filter, alreadyTested, result);
+        }
     }
 
     public void detectInFrustum(Matrix4fc worldViewProjection, List<T> result) {
-       detectInFrustum(worldViewProjection, defaultAABBOverlapFilter, result);
+        detectInFrustum(worldViewProjection, defaultAABBOverlapFilter, result);
     }
 
     public void detectInFrustum(Matrix4fc worldViewProjection, AABBOverlapFilter<T> filter, List<T> result) {
-       result.clear();
-       if (root == INVALID_NODE_INDEX)
-       {
-          return;
-       }
+        result.clear();
+        if (root == INVALID_NODE_INDEX) {
+            return;
+        }
 
-       Deque<Integer> stack = new ArrayDeque<>();
-       stack.offer(root);
-       FrustumIntersection frustumIntersection = new FrustumIntersection(worldViewProjection, false);
+        Deque<Integer> stack = new ArrayDeque<>();
+        stack.offer(root);
+        FrustumIntersection frustumIntersection = new FrustumIntersection(worldViewProjection, false);
 
-       while (!stack.isEmpty()) {
-          Integer nodeIndex = stack.pop();
-          if (nodeIndex == INVALID_NODE_INDEX)
-          {
-             continue;
-          }
+        while (!stack.isEmpty()) {
+            Integer nodeIndex = stack.pop();
+            if (nodeIndex == INVALID_NODE_INDEX) {
+                continue;
+            }
 
-          AABBTreeNode<T> node = getNodeAt(nodeIndex);
-          AABBf nodeAABB = node.getAABB();
-          if (frustumIntersection.testAab(nodeAABB.minX, nodeAABB.minY, nodeAABB.minZ, nodeAABB.maxX, nodeAABB.maxY, nodeAABB.maxZ))
-          {
-             if (node.isLeaf())
-             {
-                T nodeData = node.getData();
-                if (filter.test(nodeData))
-                {
-                   result.add(nodeData);
+            AABBTreeNode<T> node = getNodeAt(nodeIndex);
+            AABBf nodeAABB = node.getAABB();
+            if (frustumIntersection.testAab(nodeAABB.minX, nodeAABB.minY, nodeAABB.minZ, nodeAABB.maxX, nodeAABB.maxY, nodeAABB.maxZ)) {
+                if (node.isLeaf()) {
+                    T nodeData = node.getData();
+                    if (filter.test(nodeData)) {
+                        result.add(nodeData);
+                    }
+                } else {
+                    stack.offer(node.getLeftChild());
+                    stack.offer(node.getRightChild());
                 }
-             } else {
-                stack.offer(node.getLeftChild());
-                stack.offer(node.getRightChild());
-             }
-          }
-       }
+            }
+        }
     }
 
-   public boolean contains(T object) {
+    public boolean contains(T object) {
         return objects.containsKey(AABBTreeObject.create(object));
     }
 
@@ -488,18 +458,15 @@ public final class AABBTree<T extends Boundable & Identifiable> {
         return objects.size();
     }
 
-   List<AABBTreeNode<T>> getNodes()
-   {
-      return nodes;
-   }
+    List<AABBTreeNode<T>> getNodes() {
+        return nodes;
+    }
 
-   int getRoot()
-   {
-      return root;
-   }
+    int getRoot() {
+        return root;
+    }
 
-   Deque<Integer> getFreeNodes()
-   {
-      return freeNodes;
-   }
+    Deque<Integer> getFreeNodes() {
+        return freeNodes;
+    }
 }

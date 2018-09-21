@@ -1,7 +1,9 @@
 package pl.pateman.gunwo.aabbtree;
 
+import org.joml.AABBf;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -142,11 +144,11 @@ public class AABBTreeTest
       TestEntity entity1 = new TestEntity(1, 0.0f, 0.0f, 10.0f, 10.0f);
       TestEntity entity2 = new TestEntity(2, -5.0f, 0.0f, 10.0f, 10.0f);
       TestEntity entity3 = new TestEntity(3, 5.0f, 0.0f, 10.0f, 10.0f);
-
-      // When
       tree.add(entity1);
       tree.add(entity2);
       tree.add(entity3);
+
+      // When
       tree.remove(entity2);
 
       // Then
@@ -163,9 +165,9 @@ public class AABBTreeTest
       // Given
       AABBTree<TestEntity> tree = givenTree();
       TestEntity entity = new TestEntity(1, 0.0f, 0.0f, 10.0f, 10.0f);
+      tree.add(entity);
 
       // When
-      tree.add(entity);
       tree.remove(entity);
 
       // Then
@@ -177,9 +179,9 @@ public class AABBTreeTest
       // Given
       AABBTree<TestEntity> tree = givenTree();
       TestEntity entity = new TestEntity(1, 0.0f, 0.0f, 10.0f, 10.0f);
+      tree.add(entity);
 
       // When
-      tree.add(entity);
       tree.remove(entity);
 
       // Then
@@ -193,10 +195,10 @@ public class AABBTreeTest
       AABBTree<TestEntity> tree = givenTree();
       TestEntity entity1 = new TestEntity(1, 0.0f, 0.0f, 10.0f, 10.0f);
       TestEntity entity2 = new TestEntity(2, -5.0f, 0.0f, 10.0f, 10.0f);
-
-      // When
       tree.add(entity1);
       tree.add(entity2);
+
+      // When
       tree.remove(entity1);
 
       // Then
@@ -226,9 +228,9 @@ public class AABBTreeTest
       AABBTree<TestEntity> tree = givenTree();
       TestEntity entity1 = new TestEntity(1, 0.0f, 0.0f, 10.0f, 10.0f);
       TestEntity entity2 = new TestEntity(2, -5.0f, 0.0f, 10.0f, 10.0f);
+      tree.add(entity1);
 
       // When
-      tree.add(entity1);
       tree.clear();
 
       // Then
@@ -237,6 +239,114 @@ public class AABBTreeTest
       assertTrue(tree.getFreeNodes().isEmpty());
       assertTrue(tree.getNodes().isEmpty());
       assertEquals(AABBTreeNode.INVALID_NODE_INDEX, tree.getRoot());
+   }
+
+   @Test
+   public void shouldNotDetectAABBOverlaps() {
+      // Given
+      AABBf testForOverlap = new AABBf(1.0f, 10.5f, 0.0f, 2.0f, 10.0f, 0.0f);
+      AABBTree<TestEntity> tree = givenTree();
+      TestEntity entity1 = new TestEntity(1, 0.0f, 0.0f, 10.0f, 10.0f);
+      TestEntity entity2 = new TestEntity(2, -5.0f, 0.0f, 10.0f, 10.0f);
+      tree.add(entity1);
+      tree.add(entity2);
+
+      // When
+      List<TestEntity> result = new ArrayList<>();
+      tree.detectOverlaps(testForOverlap, result);
+
+      // Then
+      assertTrue(result.isEmpty());
+   }
+
+   @Test
+   public void shouldDetectAABBOverlaps() {
+      // Given
+      AABBf testForOverlap = new AABBf(1.0f, 5.1f, 0.0f, 2.0f, 10.0f, 0.0f);
+      AABBTree<TestEntity> tree = givenTree();
+      TestEntity entity1 = new TestEntity(1, -20.0f, 0.0f, 10.0f, 10.0f);
+      TestEntity entity2 = new TestEntity(2, -5.0f, 0.0f, 10.0f, 10.0f);
+      tree.add(entity1);
+      tree.add(entity2);
+
+      // When
+      List<TestEntity> result = new ArrayList<>();
+      tree.detectOverlaps(testForOverlap, result);
+
+      // Then
+      assertEquals(1, result.size());
+      assertEquals(2, result.get(0).getID());
+   }
+
+   @Test
+   public void shouldDetectAABBOverlapsWithFiltering() {
+      // Given
+      AABBf testForOverlap = new AABBf(1.0f, 5.1f, 0.0f, 2.0f, 10.0f, 0.0f);
+      AABBTree<TestEntity> tree = givenTree();
+      TestEntity entity1 = new TestEntity(1, 0.0f, 0.0f, 10.0f, 10.0f);
+      TestEntity entity2 = new TestEntity(2, -5.0f, 0.0f, 10.0f, 10.0f);
+      tree.add(entity1);
+      tree.add(entity2);
+
+      // When
+      List<TestEntity> result = new ArrayList<>();
+      List<TestEntity> filteredResult = new ArrayList<>();
+      tree.detectOverlaps(testForOverlap, result);
+      tree.detectOverlaps(testForOverlap, e -> e.getID() != 2, filteredResult);
+
+      // Then
+      assertEquals(2, result.size());
+      assertEquals(1, filteredResult.size());
+      assertEquals(1, filteredResult.get(0).getID());
+   }
+
+   @Test
+   public void shouldDetectCollidingPairs() {
+      // Given
+      AABBTree<TestEntity> tree = givenTree();
+      TestEntity entity1 = new TestEntity(1, 0.0f, 0.0f, 10.0f, 10.0f);
+      TestEntity entity2 = new TestEntity(2, -5.0f, 0.0f, 10.0f, 10.0f);
+      TestEntity entity3 = new TestEntity(3, 11.0f, 0.0f, 10.0f, 10.0f);
+      tree.add(entity1);
+      tree.add(entity2);
+      tree.add(entity3);
+      CollisionPair<TestEntity> givenPair = new CollisionPair<>(entity2, entity1);
+
+      // When
+      List<CollisionPair<TestEntity>> pairs = new ArrayList<>();
+      tree.detectCollisionPairs(pairs);
+
+      // Then
+      assertEquals(1, pairs.size());
+      CollisionPair<TestEntity> collisionPair = pairs.get(0);
+      assertEquals(givenPair, collisionPair);
+   }
+
+   @Test
+   public void shouldDetectCollidingPairsWithFiltering() {
+      // Given
+      AABBTree<TestEntity> tree = givenTree();
+      TestEntity entity1 = new TestEntity(1, 0.0f, 0.0f, 10.0f, 10.0f);
+      TestEntity entity2 = new TestEntity(2, -5.0f, 0.0f, 10.0f, 10.0f);
+      TestEntity entity3 = new TestEntity(3, 11.0f, 0.0f, 10.0f, 10.0f);
+      TestEntity entity4 = new TestEntity(4, -6.0f, 0.0f, 3.0f, 1.0f);
+      tree.add(entity1);
+      tree.add(entity2);
+      tree.add(entity3);
+      tree.add(entity4);
+      CollisionPair<TestEntity> givenPair = new CollisionPair<>(entity2, entity4);
+
+      // When
+      List<CollisionPair<TestEntity>> pairs = new ArrayList<>();
+      List<CollisionPair<TestEntity>> filteredPairs = new ArrayList<>();
+      tree.detectCollisionPairs(pairs);
+      tree.detectCollisionPairs((a, b) -> a.getID() == 2 && b.getID() == 4, filteredPairs);
+
+      // Then
+      assertEquals(2, pairs.size());
+      assertEquals(1, filteredPairs.size());
+      CollisionPair<TestEntity> filteredCollisionPair = filteredPairs.get(0);
+      assertEquals(givenPair, filteredCollisionPair);
    }
 
    private AABBTree<TestEntity> givenTree() {
