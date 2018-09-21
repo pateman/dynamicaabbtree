@@ -333,13 +333,14 @@ public final class AABBTree<T extends Boundable & Identifiable> {
 
     public void remove(T object) {
         Integer objectNodeIndex = objects.remove(AABBTreeObject.create(object));
-        if (objectNodeIndex == null)
+        if (root == INVALID_NODE_INDEX || objectNodeIndex == null)
         {
             return;
         }
 
-        if (root == INVALID_NODE_INDEX || objectNodeIndex == root)
+        if (objectNodeIndex == root)
         {
+            deallocateNode(getNodeAt(objectNodeIndex));
             root = INVALID_NODE_INDEX;
             return;
         }
@@ -486,4 +487,19 @@ public final class AABBTree<T extends Boundable & Identifiable> {
     public int size() {
         return objects.size();
     }
+
+   List<AABBTreeNode<T>> getNodes()
+   {
+      return nodes;
+   }
+
+   int getRoot()
+   {
+      return root;
+   }
+
+   Deque<Integer> getFreeNodes()
+   {
+      return freeNodes;
+   }
 }
