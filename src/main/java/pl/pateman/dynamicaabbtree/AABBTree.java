@@ -1,9 +1,8 @@
-package pl.pateman.gunwo.aabbtree;
+package pl.pateman.dynamicaabbtree;
 
 import org.joml.AABBf;
 import org.joml.FrustumIntersection;
 import org.joml.Matrix4fc;
-import pl.pateman.gunwo.aabbtree.AABBTreeHeuristicFunction.HeuristicResult;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -15,9 +14,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.lang.Math.max;
-import static pl.pateman.gunwo.aabbtree.AABBTreeNode.INVALID_NODE_INDEX;
-import static pl.pateman.gunwo.aabbtree.AABBTreeNode.LEFT_CHILD;
-import static pl.pateman.gunwo.aabbtree.AABBTreeNode.RIGHT_CHILD;
 
 /**
  * Created by pateman.
@@ -42,7 +38,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
 
     public AABBTree(AABBTreeHeuristicFunction<T> insertionHeuristicFunction, float fatAABBMargin) {
         nodes = new ArrayList<>();
-        root = INVALID_NODE_INDEX;
+        root = AABBTreeNode.INVALID_NODE_INDEX;
         this.insertionHeuristicFunction = insertionHeuristicFunction;
         if (this.insertionHeuristicFunction == null) {
             throw new IllegalArgumentException("A valid insertion heuristic function is required");
@@ -70,7 +66,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
     }
 
     private int addNodeAndGetIndex(AABBTreeNode<T> node) {
-        if (node.getIndex() != INVALID_NODE_INDEX) {
+        if (node.getIndex() != AABBTreeNode.INVALID_NODE_INDEX) {
             return node.getIndex();
         }
         nodes.add(node);
@@ -88,7 +84,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
 
     private void moveNodeToParent(AABBTreeNode<T> node, int newParentIndex) {
         int oldParentIndex = node.getParent();
-        if (oldParentIndex != INVALID_NODE_INDEX) {
+        if (oldParentIndex != AABBTreeNode.INVALID_NODE_INDEX) {
             getNodeAt(oldParentIndex).replaceChild(node.getIndex(), newParentIndex);
         }
         node.setParent(newParentIndex);
@@ -113,32 +109,32 @@ public final class AABBTree<T extends Boundable & Identifiable> {
         AABBTreeNode<T> rightLeftChild = getNodeAt(right.getLeftChild());
         AABBTreeNode<T> rightRightChild = getNodeAt(right.getRightChild());
 
-        right.assignChild(LEFT_CHILD, node.getIndex());
+        right.assignChild(AABBTreeNode.LEFT_CHILD, node.getIndex());
         right.setParent(node.getParent());
         node.setParent(right.getIndex());
 
-        if (right.getParent() != INVALID_NODE_INDEX) {
+        if (right.getParent() != AABBTreeNode.INVALID_NODE_INDEX) {
             AABBTreeNode<T> rightParent = getNodeAt(right.getParent());
             if (rightParent.getLeftChild() == node.getIndex()) {
-                rightParent.assignChild(LEFT_CHILD, right.getIndex());
+                rightParent.assignChild(AABBTreeNode.LEFT_CHILD, right.getIndex());
             } else {
-                rightParent.assignChild(RIGHT_CHILD, right.getIndex());
+                rightParent.assignChild(AABBTreeNode.RIGHT_CHILD, right.getIndex());
             }
         } else {
             root = right.getIndex();
         }
 
         if (rightLeftChild.getHeight() > rightRightChild.getHeight()) {
-            right.assignChild(RIGHT_CHILD, rightLeftChild.getIndex());
-            node.assignChild(RIGHT_CHILD, rightRightChild.getIndex());
+            right.assignChild(AABBTreeNode.RIGHT_CHILD, rightLeftChild.getIndex());
+            node.assignChild(AABBTreeNode.RIGHT_CHILD, rightRightChild.getIndex());
             rightRightChild.setParent(node.getIndex());
             left.getAABB().union(rightRightChild.getAABB(), node.getAABB());
             node.getAABB().union(rightLeftChild.getAABB(), right.getAABB());
             node.setHeight(1 + max(left.getHeight(), rightRightChild.getHeight()));
             right.setHeight(1 + max(node.getHeight(), rightLeftChild.getHeight()));
         } else {
-            right.assignChild(RIGHT_CHILD, rightRightChild.getIndex());
-            node.assignChild(RIGHT_CHILD, rightLeftChild.getIndex());
+            right.assignChild(AABBTreeNode.RIGHT_CHILD, rightRightChild.getIndex());
+            node.assignChild(AABBTreeNode.RIGHT_CHILD, rightLeftChild.getIndex());
             rightLeftChild.setParent(node.getIndex());
             left.getAABB().union(rightLeftChild.getAABB(), node.getAABB());
             node.getAABB().union(rightRightChild.getAABB(), right.getAABB());
@@ -153,32 +149,32 @@ public final class AABBTree<T extends Boundable & Identifiable> {
         AABBTreeNode<T> leftLeftChild = getNodeAt(left.getLeftChild());
         AABBTreeNode<T> leftRightChild = getNodeAt(left.getRightChild());
 
-        left.assignChild(LEFT_CHILD, node.getIndex());
+        left.assignChild(AABBTreeNode.LEFT_CHILD, node.getIndex());
         left.setParent(node.getParent());
         node.setParent(left.getIndex());
 
-        if (left.getParent() != INVALID_NODE_INDEX) {
+        if (left.getParent() != AABBTreeNode.INVALID_NODE_INDEX) {
             AABBTreeNode<T> leftParent = getNodeAt(left.getParent());
             if (leftParent.getLeftChild() == node.getIndex()) {
-                leftParent.assignChild(LEFT_CHILD, left.getIndex());
+                leftParent.assignChild(AABBTreeNode.LEFT_CHILD, left.getIndex());
             } else {
-                leftParent.assignChild(RIGHT_CHILD, left.getIndex());
+                leftParent.assignChild(AABBTreeNode.RIGHT_CHILD, left.getIndex());
             }
         } else {
             root = left.getIndex();
         }
 
         if (leftLeftChild.getHeight() > leftRightChild.getHeight()) {
-            left.assignChild(RIGHT_CHILD, leftLeftChild.getIndex());
-            node.assignChild(LEFT_CHILD, leftRightChild.getIndex());
+            left.assignChild(AABBTreeNode.RIGHT_CHILD, leftLeftChild.getIndex());
+            node.assignChild(AABBTreeNode.LEFT_CHILD, leftRightChild.getIndex());
             leftRightChild.setParent(node.getIndex());
             right.getAABB().union(leftRightChild.getAABB(), node.getAABB());
             node.getAABB().union(leftLeftChild.getAABB(), left.getAABB());
             node.setHeight(1 + max(right.getHeight(), leftRightChild.getHeight()));
             left.setHeight(1 + max(node.getHeight(), leftLeftChild.getHeight()));
         } else {
-            left.assignChild(RIGHT_CHILD, leftRightChild.getIndex());
-            node.assignChild(LEFT_CHILD, leftLeftChild.getIndex());
+            left.assignChild(AABBTreeNode.RIGHT_CHILD, leftRightChild.getIndex());
+            node.assignChild(AABBTreeNode.LEFT_CHILD, leftLeftChild.getIndex());
             leftLeftChild.setParent(node.getIndex());
             right.getAABB().union(leftLeftChild.getAABB(), node.getAABB());
             node.getAABB().union(leftRightChild.getAABB(), left.getAABB());
@@ -209,8 +205,8 @@ public final class AABBTree<T extends Boundable & Identifiable> {
     }
 
     private void syncUpHierarchy(AABBTreeNode<T> startingPoint) {
-        AABBTreeNode<T> node = startingPoint.getParent() == INVALID_NODE_INDEX ? null : getNodeAt(startingPoint.getParent());
-        while (node != null && node.getIndex() != INVALID_NODE_INDEX) {
+        AABBTreeNode<T> node = startingPoint.getParent() == AABBTreeNode.INVALID_NODE_INDEX ? null : getNodeAt(startingPoint.getParent());
+        while (node != null && node.getIndex() != AABBTreeNode.INVALID_NODE_INDEX) {
             node = balanceNode(node);
 
             AABBTreeNode<T> left = getNodeAt(node.getLeftChild());
@@ -219,7 +215,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
             node.setHeight(1 + max(left.getHeight(), right.getHeight()));
             left.getAABB().union(right.getAABB(), node.getAABB());
 
-            node = node.getParent() == INVALID_NODE_INDEX ? null : getNodeAt(node.getParent());
+            node = node.getParent() == AABBTreeNode.INVALID_NODE_INDEX ? null : getNodeAt(node.getParent());
         }
     }
 
@@ -235,9 +231,9 @@ public final class AABBTree<T extends Boundable & Identifiable> {
             AABBf aabbA = leftChild.getAABB();
             AABBf aabbB = rightChild.getAABB();
 
-            HeuristicResult heuristicResult = insertionHeuristicFunction
+            AABBTreeHeuristicFunction.HeuristicResult heuristicResult = insertionHeuristicFunction
                     .getInsertionHeuristic(aabbA, aabbB, nodeToAdd.getData(), nodeToAddAABB);
-            parentNode = HeuristicResult.LEFT.equals(heuristicResult) ? leftChild : rightChild;
+            parentNode = AABBTreeHeuristicFunction.HeuristicResult.LEFT.equals(heuristicResult) ? leftChild : rightChild;
         }
 
         int oldParentIndex = parentNode.getParent();
@@ -245,9 +241,9 @@ public final class AABBTree<T extends Boundable & Identifiable> {
         newParent.setParent(oldParentIndex);
         newParent.setHeight(parentNode.getHeight() + 1);
 
-        if (oldParentIndex == INVALID_NODE_INDEX) {
+        if (oldParentIndex == AABBTreeNode.INVALID_NODE_INDEX) {
             root = newParent.getIndex();
-            newParent.setParent(INVALID_NODE_INDEX);
+            newParent.setParent(AABBTreeNode.INVALID_NODE_INDEX);
         }
 
         syncUpHierarchy(nodeToAdd);
@@ -261,7 +257,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
 
         while (!stack.isEmpty()) {
             Integer nodeIndex = stack.pop();
-            if (nodeIndex == INVALID_NODE_INDEX) {
+            if (nodeIndex == AABBTreeNode.INVALID_NODE_INDEX) {
                 continue;
             }
 
@@ -293,7 +289,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
         AABBTreeNode<T> leafNode = createLeafNode(object);
 
         int newNodeIndex = addNodeAndGetIndex(leafNode);
-        if (root == INVALID_NODE_INDEX) {
+        if (root == AABBTreeNode.INVALID_NODE_INDEX) {
             root = newNodeIndex;
         } else {
             insertNode(newNodeIndex);
@@ -306,7 +302,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
         nodes.clear();
         objects.clear();
         freeNodes.clear();
-        root = INVALID_NODE_INDEX;
+        root = AABBTreeNode.INVALID_NODE_INDEX;
     }
 
     public void update(T object) {
@@ -321,19 +317,19 @@ public final class AABBTree<T extends Boundable & Identifiable> {
 
     public void remove(T object) {
         Integer objectNodeIndex = objects.remove(AABBTreeObject.create(object));
-        if (root == INVALID_NODE_INDEX || objectNodeIndex == null) {
+        if (root == AABBTreeNode.INVALID_NODE_INDEX || objectNodeIndex == null) {
             return;
         }
 
         if (objectNodeIndex == root) {
             deallocateNode(getNodeAt(objectNodeIndex));
-            root = INVALID_NODE_INDEX;
+            root = AABBTreeNode.INVALID_NODE_INDEX;
             return;
         }
 
         AABBTreeNode<T> node = getNodeAt(objectNodeIndex);
-        AABBTreeNode<T> nodeParent = node.getParent() == INVALID_NODE_INDEX ? null : getNodeAt(node.getParent());
-        AABBTreeNode<T> nodeGrandparent = nodeParent == null || nodeParent.getParent() == INVALID_NODE_INDEX ? null : getNodeAt(nodeParent.getParent());
+        AABBTreeNode<T> nodeParent = node.getParent() == AABBTreeNode.INVALID_NODE_INDEX ? null : getNodeAt(node.getParent());
+        AABBTreeNode<T> nodeGrandparent = nodeParent == null || nodeParent.getParent() == AABBTreeNode.INVALID_NODE_INDEX ? null : getNodeAt(nodeParent.getParent());
         AABBTreeNode<T> nodeSibling = null;
         if (nodeParent != null) {
             nodeSibling = nodeParent.getLeftChild() == objectNodeIndex ? getNodeAt(nodeParent.getRightChild()) : getNodeAt(nodeParent.getLeftChild());
@@ -343,14 +339,14 @@ public final class AABBTree<T extends Boundable & Identifiable> {
 
         if (nodeGrandparent == null) {
             root = nodeSibling.getIndex();
-            nodeSibling.setParent(INVALID_NODE_INDEX);
+            nodeSibling.setParent(AABBTreeNode.INVALID_NODE_INDEX);
             return;
         }
 
         if (nodeGrandparent.getLeftChild() == nodeParent.getIndex()) {
-            nodeGrandparent.assignChild(LEFT_CHILD, nodeSibling.getIndex());
+            nodeGrandparent.assignChild(AABBTreeNode.LEFT_CHILD, nodeSibling.getIndex());
         } else {
-            nodeGrandparent.assignChild(RIGHT_CHILD, nodeSibling.getIndex());
+            nodeGrandparent.assignChild(AABBTreeNode.RIGHT_CHILD, nodeSibling.getIndex());
         }
 
         nodeSibling.setParent(nodeGrandparent.getIndex());
@@ -363,7 +359,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
 
     public void detectOverlaps(AABBf overlapWith, AABBOverlapFilter<T> filter, List<T> result) {
         result.clear();
-        if (root == INVALID_NODE_INDEX) {
+        if (root == AABBTreeNode.INVALID_NODE_INDEX) {
             return;
         }
 
@@ -372,7 +368,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
 
         while (!stack.isEmpty()) {
             Integer nodeIndex = stack.pop();
-            if (nodeIndex == INVALID_NODE_INDEX) {
+            if (nodeIndex == AABBTreeNode.INVALID_NODE_INDEX) {
                 continue;
             }
 
@@ -398,7 +394,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
 
     public void detectCollisionPairs(CollisionFilter<T> filter, List<CollisionPair<T>> result) {
         result.clear();
-        if (root == INVALID_NODE_INDEX) {
+        if (root == AABBTreeNode.INVALID_NODE_INDEX) {
             return;
         }
 
@@ -420,7 +416,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
 
     public void detectInFrustum(Matrix4fc worldViewProjection, AABBOverlapFilter<T> filter, List<T> result) {
         result.clear();
-        if (root == INVALID_NODE_INDEX) {
+        if (root == AABBTreeNode.INVALID_NODE_INDEX) {
             return;
         }
 
@@ -430,7 +426,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
 
         while (!stack.isEmpty()) {
             Integer nodeIndex = stack.pop();
-            if (nodeIndex == INVALID_NODE_INDEX) {
+            if (nodeIndex == AABBTreeNode.INVALID_NODE_INDEX) {
                 continue;
             }
 

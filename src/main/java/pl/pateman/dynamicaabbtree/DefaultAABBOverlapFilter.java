@@ -1,4 +1,4 @@
-package pl.pateman.gunwo.aabbtree;
+package pl.pateman.dynamicaabbtree;
 
 public class DefaultAABBOverlapFilter<T extends Boundable & Identifiable> implements AABBOverlapFilter<T>
 {

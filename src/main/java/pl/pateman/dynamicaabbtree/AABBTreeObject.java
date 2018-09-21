@@ -1,8 +1,6 @@
-package pl.pateman.gunwo.aabbtree;
+package pl.pateman.dynamicaabbtree;
 
 import java.util.Objects;
-
-import static pl.pateman.gunwo.aabbtree.AABBTreeNode.INVALID_NODE_INDEX;
 
 final class AABBTreeObject<E extends Identifiable>
 {

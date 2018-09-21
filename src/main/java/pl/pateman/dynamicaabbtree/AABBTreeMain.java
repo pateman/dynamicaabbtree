@@ -1,4 +1,4 @@
-package pl.pateman.gunwo.aabbtree;
+package pl.pateman.dynamicaabbtree;
 
 import org.joml.AABBf;
 

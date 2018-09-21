@@ -1,8 +1,9 @@
-package pl.pateman.gunwo.aabbtree;
+package pl.pateman.dynamicaabbtree;
 
 import org.joml.AABBf;
 
-import static pl.pateman.gunwo.aabbtree.AABBUtils.getArea;
+import static pl.pateman.dynamicaabbtree.AABBUtils.getArea;
+
 
 public class AreaAABBHeuristicFunction<T extends Boundable> implements AABBTreeHeuristicFunction<T>
 {
