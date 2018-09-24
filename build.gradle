@@ -1,9 +1,9 @@
 plugins {
-    id 'java'
+    id 'java-library'
 }
 
 group 'pl.pateman'
-version '1.0-SNAPSHOT'
+version '1.0.0'
 
 sourceCompatibility = 1.8
 
@@ -12,9 +12,6 @@ repositories {
 }
 
 dependencies {
-    compile 'org.processing:core:3.3.7'
-    compile 'org.dyn4j:dyn4j:3.2.4'
-    compile 'com.google.guava:guava:26.0-jre'
-    compile 'org.joml:joml-jdk8:1.9.11'
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    api 'org.joml:joml-jdk8:1.9.11'
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
 }
