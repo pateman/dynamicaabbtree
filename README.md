@@ -15,5 +15,7 @@ A single instance of `AABBTree` should **not** be used across multiple threads.
 Portions of the code were inspired by [Dyn4J's](https://github.com/dyn4j/dyn4j) `DynamicAABBTree` class. Here are a few articles that helped me understand the whole structure:
 
 http://www.randygaul.net/2013/08/06/dynamic-aabb-tree/
+
 https://www.azurefromthetrenches.com/introductory-guide-to-aabb-tree-collision-detection/
+
 http://allenchou.net/2014/02/game-physics-broadphase-dynamic-aabb-tree/
