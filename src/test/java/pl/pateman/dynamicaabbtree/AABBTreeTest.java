@@ -1,14 +1,13 @@
 package pl.pateman.dynamicaabbtree;
 
 import org.joml.AABBf;
+import org.joml.Rayf;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class AABBTreeTest
 {
@@ -347,6 +346,25 @@ public class AABBTreeTest
       assertEquals(1, filteredPairs.size());
       CollisionPair<TestEntity> filteredCollisionPair = filteredPairs.get(0);
       assertEquals(givenPair, filteredCollisionPair);
+   }
+
+   @Test
+   public void shouldDetectRayIntersection() {
+      // Given
+      AABBTree<TestEntity> tree = givenTree();
+      Rayf ray = new Rayf(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f);
+      TestEntity entity1 = new TestEntity(1, 2.0f, 0.0f, 3.0f, 3.0f);
+      TestEntity entity2 = new TestEntity(2, -5.0f, 0.0f, 3.0f, 2.0f);
+      tree.add(entity1);
+      tree.add(entity2);
+
+      // When
+      List<TestEntity> intersecting = new ArrayList<>();
+      tree.detectRayIntersection(ray, intersecting);
+
+      // Then
+      assertEquals(1, intersecting.size());
+      assertEquals(1L, intersecting.get(0).getID());
    }
 
    private AABBTree<TestEntity> givenTree() {

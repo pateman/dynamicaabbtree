@@ -1,17 +1,9 @@
 package pl.pateman.dynamicaabbtree;
 
-import org.joml.AABBf;
-import org.joml.FrustumIntersection;
-import org.joml.Matrix4fc;
+import org.joml.*;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Predicate;
 
 import static java.lang.Math.max;
 
@@ -358,34 +350,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
     }
 
     public void detectOverlaps(AABBf overlapWith, AABBOverlapFilter<T> filter, List<T> result) {
-        result.clear();
-        if (root == AABBTreeNode.INVALID_NODE_INDEX) {
-            return;
-        }
-
-        Deque<Integer> stack = new ArrayDeque<>();
-        stack.offer(root);
-
-        while (!stack.isEmpty()) {
-            Integer nodeIndex = stack.pop();
-            if (nodeIndex == AABBTreeNode.INVALID_NODE_INDEX) {
-                continue;
-            }
-
-            AABBTreeNode<T> node = getNodeAt(nodeIndex);
-            AABBf nodeAABB = node.getAABB();
-            if (nodeAABB.testAABB(overlapWith)) {
-                if (node.isLeaf()) {
-                    T nodeData = node.getData();
-                    if (filter.test(nodeData)) {
-                        result.add(nodeData);
-                    }
-                } else {
-                    stack.offer(node.getLeftChild());
-                    stack.offer(node.getRightChild());
-                }
-            }
-        }
+        traverseTree(aabb -> aabb.testAABB(overlapWith), filter, result);
     }
 
     public void detectCollisionPairs(List<CollisionPair<T>> result) {
@@ -415,6 +380,20 @@ public final class AABBTree<T extends Boundable & Identifiable> {
     }
 
     public void detectInFrustum(Matrix4fc worldViewProjection, AABBOverlapFilter<T> filter, List<T> result) {
+        FrustumIntersection frustumIntersection = new FrustumIntersection(worldViewProjection, false);
+        traverseTree(aabb -> frustumIntersection.testAab(aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ), filter, result);
+    }
+
+    public void detectRayIntersection(Rayf ray, List<T> result) {
+        detectRayIntersection(ray, defaultAABBOverlapFilter, result);
+    }
+
+    public void detectRayIntersection(Rayf ray, AABBOverlapFilter<T> filter, List<T> result) {
+        RayAabIntersection intersection = new RayAabIntersection(ray.oX, ray.oY, ray.oZ, ray.dX, ray.dY, ray.dZ);
+        traverseTree(aabb -> intersection.test(aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ), filter, result);
+    }
+
+    private void traverseTree(Predicate<AABBf> nodeTest, AABBOverlapFilter<T> filter, List<T> result) {
         result.clear();
         if (root == AABBTreeNode.INVALID_NODE_INDEX) {
             return;
@@ -422,7 +401,6 @@ public final class AABBTree<T extends Boundable & Identifiable> {
 
         Deque<Integer> stack = new ArrayDeque<>();
         stack.offer(root);
-        FrustumIntersection frustumIntersection = new FrustumIntersection(worldViewProjection, false);
 
         while (!stack.isEmpty()) {
             Integer nodeIndex = stack.pop();
@@ -432,7 +410,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
 
             AABBTreeNode<T> node = getNodeAt(nodeIndex);
             AABBf nodeAABB = node.getAABB();
-            if (frustumIntersection.testAab(nodeAABB.minX, nodeAABB.minY, nodeAABB.minZ, nodeAABB.maxX, nodeAABB.maxY, nodeAABB.maxZ)) {
+            if (nodeTest.test(nodeAABB)) {
                 if (node.isLeaf()) {
                     T nodeData = node.getData();
                     if (filter.test(nodeData)) {
