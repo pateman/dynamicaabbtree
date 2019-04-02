@@ -20,6 +20,8 @@ public final class AABBTree<T extends Boundable & Identifiable> {
     private final CollisionFilter<T> defaultCollisionFilter;
     private final Map<AABBTreeObject<T>, Integer> objects;
     private final Deque<Integer> freeNodes;
+    private final FrustumIntersection frustumIntersection;
+    private final RayAabIntersection rayIntersection;
 
     private int root;
     private float fatAABBMargin;
@@ -40,6 +42,9 @@ public final class AABBTree<T extends Boundable & Identifiable> {
         defaultAABBOverlapFilter = new DefaultAABBOverlapFilter<>();
         defaultCollisionFilter = new DefaultCollisionFilter<>();
         this.fatAABBMargin = fatAABBMargin;
+
+        frustumIntersection = new FrustumIntersection();
+        rayIntersection = new RayAabIntersection();
     }
 
     private AABBTreeNode<T> allocateNode() {
@@ -380,7 +385,7 @@ public final class AABBTree<T extends Boundable & Identifiable> {
     }
 
     public void detectInFrustum(Matrix4fc worldViewProjection, AABBOverlapFilter<T> filter, List<T> result) {
-        FrustumIntersection frustumIntersection = new FrustumIntersection(worldViewProjection, false);
+        frustumIntersection.set(worldViewProjection, false);
         traverseTree(aabb -> frustumIntersection.testAab(aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ), filter, result);
     }
 
@@ -389,8 +394,8 @@ public final class AABBTree<T extends Boundable & Identifiable> {
     }
 
     public void detectRayIntersection(Rayf ray, AABBOverlapFilter<T> filter, List<T> result) {
-        RayAabIntersection intersection = new RayAabIntersection(ray.oX, ray.oY, ray.oZ, ray.dX, ray.dY, ray.dZ);
-        traverseTree(aabb -> intersection.test(aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ), filter, result);
+        rayIntersection.set(ray.oX, ray.oY, ray.oZ, ray.dX, ray.dY, ray.dZ);
+        traverseTree(aabb -> rayIntersection.test(aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ), filter, result);
     }
 
     private void traverseTree(Predicate<AABBf> nodeTest, AABBOverlapFilter<T> filter, List<T> result) {
