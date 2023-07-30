@@ -57,8 +57,11 @@ final class AABBTreeNode<E extends Boundable> {
 
     void resetForReuse() {
         assignChildren(INVALID_NODE_INDEX, INVALID_NODE_INDEX);
-        setData(null);
+        aabb.setMin(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY);
+        aabb.setMax(Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
         setParent(INVALID_NODE_INDEX);
+        setHeight(0);
+        setData(null);
 
         aabb.setMin(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY);
         aabb.setMax(Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
