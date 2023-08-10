@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.*;
+import static pl.pateman.dynamicaabbtree.AABBTreeNode.INVALID_NODE_INDEX;
 
 public class AABBTreeTest
 {
@@ -237,7 +238,7 @@ public class AABBTreeTest
       assertFalse(tree.contains(entity2));
       assertTrue(tree.getFreeNodes().isEmpty());
       assertTrue(tree.getNodes().isEmpty());
-      assertEquals(AABBTreeNode.INVALID_NODE_INDEX, tree.getRoot());
+      assertEquals(INVALID_NODE_INDEX, tree.getRoot());
    }
 
    @Test
@@ -365,6 +366,30 @@ public class AABBTreeTest
       // Then
       assertEquals(1, intersecting.size());
       assertEquals(1L, intersecting.get(0).getID());
+   }
+
+   @Test
+   public void shouldRestoreNodeToInitialStateOnReuse() {
+      // Given
+      TestEntity entity = new TestEntity(1, 0.0f, 0.0f, 1.0f, 1.0f);
+      AABBTreeNode<TestEntity> node = new AABBTreeNode<>();
+
+      // When
+      node.setHeight(10);
+      node.setIndex(2);
+      node.setParent(1);
+      node.setData(entity);
+      node.assignChildren(3, 4);
+
+      node.resetForReuse();
+
+      // Then
+      assertEquals(INVALID_NODE_INDEX, node.getLeftChild());
+      assertEquals(INVALID_NODE_INDEX, node.getRightChild());
+      assertEquals(new AABBf(), node.getAABB());
+      assertEquals(INVALID_NODE_INDEX, node.getParent());
+      assertEquals(0, node.getHeight());
+      assertNull(node.getData());
    }
 
    private AABBTree<TestEntity> givenTree() {
